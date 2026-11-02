@@ -116,6 +116,12 @@
             </div>
 
             <div class="flex items-center space-x-2 sm:space-x-4">
+                <!-- Center Info Edit Settings Button -->
+                <button onclick="openSettingsModal()" title="Editar Datos del Centro y Director/a" class="bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs px-3 py-1.5 sm:px-3.5 sm:py-2 rounded-lg flex items-center gap-1.5 border border-slate-700 transition">
+                    <i data-lucide="user-cog" class="w-4 h-4 text-brand-400"></i>
+                    <span class="hidden md:inline">Director/a & Datos</span>
+                </button>
+
                 <!-- Supabase Connection Indicator -->
                 <button onclick="openConfigModal()" id="dbStatusBtn" class="flex items-center gap-2 text-xs px-3 py-1.5 rounded-lg border border-slate-700 bg-slate-800 hover:bg-slate-700 transition">
                     <span id="dbStatusDot" class="w-2 h-2 rounded-full bg-amber-500"></span>
@@ -471,14 +477,19 @@ git push -u origin main
                 </div>
                 
                 <div class="flex flex-wrap items-center gap-3">
+                    <button onclick="openSettingsModal()" class="bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs px-3 py-2 rounded-lg border border-slate-700 flex items-center gap-1.5">
+                        <i data-lucide="user-cog" class="w-4 h-4 text-brand-400"></i>
+                        <span>Cambiar Director/a</span>
+                    </button>
+
                     <label class="flex items-center gap-2 text-xs text-slate-300 cursor-pointer bg-slate-800 px-3 py-2 rounded-lg border border-slate-700">
                         <input type="checkbox" id="blankLetterheadCheck" onchange="toggleBlankLetterhead()" class="rounded border-slate-700 text-brand-600 focus:ring-brand-500 bg-slate-900">
                         <span>Espacio para papel pre-impreso</span>
                     </label>
 
-                    <button onclick="window.print()" class="bg-emerald-600 hover:bg-emerald-500 text-white font-medium text-xs sm:text-sm px-4 py-2 rounded-lg flex items-center gap-2 shadow-lg shadow-emerald-600/20">
-                        <i data-lucide="printer" class="w-4 h-4"></i>
-                        <span>Imprimir Reporte</span>
+                    <button onclick="downloadInventoryPDF()" class="bg-emerald-600 hover:bg-emerald-500 text-white font-medium text-xs sm:text-sm px-4 py-2 rounded-lg flex items-center gap-2 shadow-lg shadow-emerald-600/20">
+                        <i data-lucide="file-down" class="w-4 h-4"></i>
+                        <span>Descargar PDF / Imprimir</span>
                     </button>
                 </div>
             </div>
@@ -501,12 +512,12 @@ git push -u origin main
                 <!-- Report Meta Data -->
                 <div class="grid grid-cols-2 sm:grid-cols-3 gap-4 text-xs mb-6 bg-slate-50 p-4 rounded-lg border border-slate-200">
                     <div>
-                        <span class="font-bold text-slate-600 block">Dinamizador TIC:</span>
-                        <span class="text-slate-900 font-semibold">Jorge Luis de la Cruz Corcino</span>
+                        <span class="font-bold text-slate-600 block">Dinamizador/a TIC:</span>
+                        <span id="reportDinamizador" class="text-slate-900 font-semibold">Jorge Luis de la Cruz Corcino</span>
                     </div>
                     <div>
-                        <span class="font-bold text-slate-600 block">Director del Centro:</span>
-                        <span class="text-slate-900 font-semibold">Juan Ramón Paulino Balbi</span>
+                        <span id="reportDirectorLabel" class="font-bold text-slate-600 block">Director del Centro:</span>
+                        <span id="reportDirector" class="text-slate-900 font-semibold">Juan Ramón Paulino Balbi</span>
                     </div>
                     <div>
                         <span class="font-bold text-slate-600 block">Fecha de Emisión:</span>
@@ -546,13 +557,13 @@ git push -u origin main
                 <div class="mt-16 pt-8 border-t border-slate-300 grid grid-cols-2 gap-12 text-center">
                     <div>
                         <div class="border-b border-slate-400 mb-2 mx-8"></div>
-                        <p class="text-xs font-bold text-slate-800">Jorge Luis de la Cruz Corcino</p>
-                        <p class="text-[10px] text-slate-500 uppercase">Dinamizador TIC del Centro</p>
+                        <p id="signatureDinamizador" class="text-xs font-bold text-slate-800">Jorge Luis de la Cruz Corcino</p>
+                        <p id="signatureDinamizadorTitle" class="text-[10px] text-slate-500 uppercase">Dinamizador TIC del Centro</p>
                     </div>
                     <div>
                         <div class="border-b border-slate-400 mb-2 mx-8"></div>
-                        <p class="text-xs font-bold text-slate-800">Juan Ramón Paulino Balbi</p>
-                        <p class="text-[10px] text-slate-500 uppercase">Director del Centro Educativo</p>
+                        <p id="signatureDirector" class="text-xs font-bold text-slate-800">Juan Ramón Paulino Balbi</p>
+                        <p id="signatureDirectorTitle" class="text-[10px] text-slate-500 uppercase">Director del Centro Educativo</p>
                     </div>
                 </div>
 
@@ -622,22 +633,22 @@ git push -u origin main
 
                 <div class="grid grid-cols-2 gap-3 sm:gap-4">
                     <div>
-                        <label class="block text-xs font-semibold text-slate-400 mb-1">Marca y Modelo</label>
-                        <input type="text" id="eqBrand" placeholder="Ej: HP ProBook 440" class="w-full px-3 py-2 bg-slate-950 border border-slate-800 rounded-lg text-sm text-white focus:outline-none focus:border-brand-500">
+                        <label class="block text-xs font-semibold text-slate-400 mb-1">Marca / Modelo</label>
+                        <input type="text" id="eqBrand" placeholder="Ej: HP ProBook 440" class="w-full px-3 py-2 bg-slate-950 border border-slate-800 rounded-lg text-xs sm:text-sm text-white focus:outline-none focus:border-brand-500">
                     </div>
                     <div>
-                        <label class="block text-xs font-semibold text-slate-400 mb-1">Número de Serie</label>
-                        <input type="text" id="eqSerial" placeholder="SN-12345678" class="w-full px-3 py-2 bg-slate-950 border border-slate-800 rounded-lg text-sm text-white focus:outline-none focus:border-brand-500">
+                        <label class="block text-xs font-semibold text-slate-400 mb-1">No. Serie</label>
+                        <input type="text" id="eqSerial" placeholder="Ej: 5CD123456X" class="w-full px-3 py-2 bg-slate-950 border border-slate-800 rounded-lg text-xs sm:text-sm text-white focus:outline-none focus:border-brand-500">
                     </div>
                 </div>
 
                 <div class="grid grid-cols-2 gap-3 sm:gap-4">
                     <div>
-                        <label class="block text-xs font-semibold text-slate-400 mb-1">Ubicación Actual *</label>
+                        <label class="block text-xs font-semibold text-slate-400 mb-1">Ubicación *</label>
                         <input type="text" id="eqLocation" required placeholder="Ej: Laboratorio TIC" class="w-full px-3 py-2 bg-slate-950 border border-slate-800 rounded-lg text-xs sm:text-sm text-white focus:outline-none focus:border-brand-500">
                     </div>
                     <div>
-                        <label class="block text-xs font-semibold text-slate-400 mb-1">Estado Operativo *</label>
+                        <label class="block text-xs font-semibold text-slate-400 mb-1">Estado *</label>
                         <select id="eqStatus" required class="w-full px-3 py-2 bg-slate-950 border border-slate-800 rounded-lg text-xs sm:text-sm text-slate-300 focus:outline-none focus:border-brand-500">
                             <option value="Operativo">Operativo</option>
                             <option value="En Mantenimiento">En Mantenimiento</option>
@@ -648,13 +659,55 @@ git push -u origin main
                 </div>
 
                 <div>
-                    <label class="block text-xs font-semibold text-slate-400 mb-1">Observaciones / Detalles Técnicos</label>
-                    <textarea id="eqNotes" rows="2" placeholder="Ej: Cargador original, pantalla intacta..." class="w-full px-3 py-2 bg-slate-950 border border-slate-800 rounded-lg text-sm text-white focus:outline-none focus:border-brand-500"></textarea>
+                    <label class="block text-xs font-semibold text-slate-400 mb-1">Notas / Observaciones</label>
+                    <textarea id="eqNotes" rows="2" placeholder="Detalles adicionales sobre el equipo..." class="w-full px-3 py-2 bg-slate-950 border border-slate-800 rounded-lg text-xs sm:text-sm text-white focus:outline-none focus:border-brand-500"></textarea>
                 </div>
 
-                <div class="pt-2 flex justify-end gap-3">
+                <div class="pt-2 flex justify-end gap-2">
                     <button type="button" onclick="closeEquipmentModal()" class="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-medium rounded-lg">Cancelar</button>
                     <button type="submit" class="px-4 py-2 bg-brand-600 hover:bg-brand-500 text-white text-xs font-medium rounded-lg shadow-md">Guardar Equipo</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- MODAL: EDIT CENTER & DIRECTOR SETTINGS -->
+    <div id="settingsModal" class="fixed inset-0 bg-slate-950/80 backdrop-blur-sm z-50 flex items-center justify-center hidden p-4 no-print">
+        <div class="bg-slate-900 border border-slate-800 rounded-xl max-w-md w-full overflow-hidden shadow-2xl">
+            <div class="px-6 py-4 border-b border-slate-800 flex items-center justify-between">
+                <h3 class="font-bold text-white text-base flex items-center gap-2">
+                    <i data-lucide="user-cog" class="w-5 h-5 text-brand-400"></i>
+                    Configurar Director/a y Datos
+                </h3>
+                <button onclick="closeSettingsModal()" class="text-slate-400 hover:text-white p-1">
+                    <i data-lucide="x" class="w-5 h-5"></i>
+                </button>
+            </div>
+            
+            <form onsubmit="saveCenterSettings(event)" class="p-6 space-y-4">
+                <div>
+                    <label class="block text-xs font-semibold text-slate-400 mb-1">Nombre del Director/a *</label>
+                    <input type="text" id="settingDirectorName" required placeholder="Ej: Juan Ramón Paulino Balbi" class="w-full px-3 py-2 bg-slate-950 border border-slate-800 rounded-lg text-sm text-white focus:outline-none focus:border-brand-500">
+                </div>
+
+                <div>
+                    <label class="block text-xs font-semibold text-slate-400 mb-1">Cargo / Cargo Institucional *</label>
+                    <select id="settingDirectorTitle" class="w-full px-3 py-2 bg-slate-950 border border-slate-800 rounded-lg text-sm text-slate-300 focus:outline-none focus:border-brand-500">
+                        <option value="Director del Centro Educativo">Director del Centro Educativo</option>
+                        <option value="Directora del Centro Educativo">Directora del Centro Educativo</option>
+                        <option value="Director Interino">Director Interino</option>
+                        <option value="Directora Interina">Directora Interina</option>
+                    </select>
+                </div>
+
+                <div>
+                    <label class="block text-xs font-semibold text-slate-400 mb-1">Nombre del Dinamizador/a TIC *</label>
+                    <input type="text" id="settingDinamizadorName" required placeholder="Ej: Jorge Luis de la Cruz Corcino" class="w-full px-3 py-2 bg-slate-950 border border-slate-800 rounded-lg text-sm text-white focus:outline-none focus:border-brand-500">
+                </div>
+
+                <div class="pt-2 flex justify-end gap-2">
+                    <button type="button" onclick="closeSettingsModal()" class="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-medium rounded-lg">Cancelar</button>
+                    <button type="submit" class="px-4 py-2 bg-brand-600 hover:bg-brand-500 text-white text-xs font-medium rounded-lg shadow-md">Guardar Datos</button>
                 </div>
             </form>
         </div>
@@ -767,14 +820,81 @@ CREATE TABLE IF NOT EXISTS equipos (
         let html5QrScanner = null;
         let currentCoverModel = 1;
 
+        // Center / Authority Settings State
+        let centerSettings = {
+            directorName: 'Juan Ramón Paulino Balbi',
+            directorTitle: 'Director del Centro Educativo',
+            dinamizadorName: 'Jorge Luis de la Cruz Corcino',
+            dinamizadorTitle: 'Dinamizador TIC del Centro'
+        };
+
         // On Page Load
         window.addEventListener('DOMContentLoaded', async () => {
             lucide.createIcons();
+            loadSettings();
             initSupabase();
             await loadEquipmentData();
             updateReportDate();
             renderCoverModel(1);
         });
+
+        // Load & Save Settings
+        function loadSettings() {
+            const saved = localStorage.getItem('dtic_settings');
+            if (saved) {
+                try {
+                    centerSettings = { ...centerSettings, ...JSON.parse(saved) };
+                } catch(e) {}
+            }
+            applySettingsToUI();
+        }
+
+        function saveCenterSettings(e) {
+            e.preventDefault();
+            centerSettings.directorName = document.getElementById('settingDirectorName').value.trim();
+            centerSettings.directorTitle = document.getElementById('settingDirectorTitle').value;
+            centerSettings.dinamizadorName = document.getElementById('settingDinamizadorName').value.trim();
+
+            localStorage.setItem('dtic_settings', JSON.stringify(centerSettings));
+            applySettingsToUI();
+            renderReportView();
+            renderCoverModel(currentCoverModel);
+            closeSettingsModal();
+        }
+
+        function applySettingsToUI() {
+            const isFemale = centerSettings.directorTitle.toLowerCase().includes('directora');
+            const dirLabel = isFemale ? 'Directora del Centro:' : 'Director del Centro:';
+
+            document.getElementById('reportDirectorLabel').innerText = dirLabel;
+            document.getElementById('reportDirector').innerText = centerSettings.directorName;
+            document.getElementById('reportDinamizador').innerText = centerSettings.dinamizadorName;
+
+            document.getElementById('signatureDirector').innerText = centerSettings.directorName;
+            document.getElementById('signatureDirectorTitle').innerText = centerSettings.directorTitle.toUpperCase();
+
+            document.getElementById('signatureDinamizador').innerText = centerSettings.dinamizadorName;
+            document.getElementById('signatureDinamizadorTitle').innerText = centerSettings.dinamizadorTitle.toUpperCase();
+        }
+
+        function openSettingsModal() {
+            document.getElementById('settingDirectorName').value = centerSettings.directorName;
+            document.getElementById('settingDirectorTitle').value = centerSettings.directorTitle;
+            document.getElementById('settingDinamizadorName').value = centerSettings.dinamizadorName;
+            document.getElementById('settingsModal').classList.remove('hidden');
+        }
+
+        function closeSettingsModal() {
+            document.getElementById('settingsModal').classList.add('hidden');
+        }
+
+        // Export/Download Report PDF directly
+        function downloadInventoryPDF() {
+            switchTab('report');
+            setTimeout(() => {
+                window.print();
+            }, 200);
+        }
 
         // Initialize Supabase Client if credentials exist
         function initSupabase() {
@@ -1228,6 +1348,10 @@ CREATE TABLE IF NOT EXISTS equipos (
             const nowYear = new Date().getFullYear();
             const schoolYear = `${nowYear}-${nowYear + 1}`;
 
+            const dirName = centerSettings.directorName;
+            const dirTitle = centerSettings.directorTitle;
+            const dinName = centerSettings.dinamizadorName;
+
             if (modelNum === 1) {
                 // Modelo 1: Formal Institucional MINERD
                 container.innerHTML = `
@@ -1249,13 +1373,13 @@ CREATE TABLE IF NOT EXISTS equipos (
                     <div class="grid grid-cols-2 gap-8 border-t border-slate-300 pt-8 text-xs">
                         <div class="bg-slate-50 p-4 rounded-lg border border-slate-200">
                             <p class="font-bold text-slate-500 uppercase text-[10px] mb-1">Presentado por:</p>
-                            <p class="font-bold text-slate-900 text-sm">Jorge Luis de la Cruz Corcino</p>
+                            <p class="font-bold text-slate-900 text-sm">${dinName}</p>
                             <p class="text-slate-600">Dinamizador/a TIC</p>
                         </div>
                         <div class="bg-slate-50 p-4 rounded-lg border border-slate-200">
                             <p class="font-bold text-slate-500 uppercase text-[10px] mb-1">Dirigido a:</p>
-                            <p class="font-bold text-slate-900 text-sm">Juan Ramón Paulino Balbi</p>
-                            <p class="text-slate-600">Director del Centro Educativo</p>
+                            <p class="font-bold text-slate-900 text-sm">${dirName}</p>
+                            <p class="text-slate-600">${dirTitle}</p>
                         </div>
                     </div>
                 `;
@@ -1278,12 +1402,12 @@ CREATE TABLE IF NOT EXISTS equipos (
 
                     <div class="border-t-2 border-slate-900 pt-6 flex justify-between items-end text-xs">
                         <div>
-                            <p class="font-bold text-slate-900 text-sm">Jorge Luis de la Cruz Corcino</p>
-                            <p class="text-slate-500">Dinamizador TIC • Cédula: 056-0097924-8</p>
+                            <p class="font-bold text-slate-900 text-sm">${dinName}</p>
+                            <p class="text-slate-500">Dinamizador/a TIC • Escuela Porfirio Jerez Veras</p>
                         </div>
                         <div class="text-right">
-                            <p class="font-bold text-slate-900">Distrito Educativo 07-06</p>
-                            <p class="text-slate-500">San Francisco de Macorís</p>
+                            <p class="font-bold text-slate-900">${dirName}</p>
+                            <p class="text-slate-500">${dirTitle}</p>
                         </div>
                     </div>
                 `;
@@ -1308,12 +1432,12 @@ CREATE TABLE IF NOT EXISTS equipos (
                     <div class="border-t border-slate-300 pt-6 grid grid-cols-2 gap-4 text-xs">
                         <div>
                             <p class="font-bold text-slate-700">Dinamizador/a TIC:</p>
-                            <p class="text-slate-900 font-semibold">Jorge Luis de la Cruz Corcino</p>
-                            <p class="text-slate-500 mt-1">Coordinadora Pedagógica: Yomary Altagracia Paulino</p>
+                            <p class="text-slate-900 font-semibold">${dinName}</p>
+                            <p class="text-slate-500 mt-1">Distrito Educativo 07-06</p>
                         </div>
                         <div>
-                            <p class="font-bold text-slate-700">Director del Centro:</p>
-                            <p class="text-slate-900 font-semibold">Juan Ramón Paulino Balbi</p>
+                            <p class="font-bold text-slate-700">${dirTitle}:</p>
+                            <p class="text-slate-900 font-semibold">${dirName}</p>
                             <p class="text-slate-500 mt-1">Código de Centro: 1140</p>
                         </div>
                     </div>
@@ -1336,12 +1460,12 @@ CREATE TABLE IF NOT EXISTS equipos (
 
                     <div class="border-t border-slate-200 pt-6 flex justify-between items-center text-xs">
                         <div>
-                            <p class="font-bold text-slate-900">Jorge Luis de la Cruz Corcino</p>
-                            <p class="text-slate-500">Dinamizador TIC</p>
+                            <p class="font-bold text-slate-900">${dinName}</p>
+                            <p class="text-slate-500">Dinamizador/a TIC</p>
                         </div>
                         <div class="text-right">
-                            <p class="font-bold text-slate-900">Año Escolar ${schoolYear}</p>
-                            <p class="text-slate-500">Nivel: Todos los Niveles</p>
+                            <p class="font-bold text-slate-900">${dirName}</p>
+                            <p class="text-slate-500">${dirTitle}</p>
                         </div>
                     </div>
                 `;
