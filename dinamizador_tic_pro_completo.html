@@ -1,0 +1,1366 @@
+<!DOCTYPE html>
+<html lang="es" class="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ID-TIC - Inventario Digital de Equipos TIC</title>
+
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        brand: {
+                            50: '#f0f7ff',
+                            100: '#e0effe',
+                            500: '#0284c7',
+                            600: '#0369a1',
+                            700: '#075985',
+                            900: '#0c4a6e',
+                        },
+                        accent: {
+                            500: '#f97316',
+                            600: '#ea580c',
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+
+    <!-- Lucide Icons -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+
+    <!-- HTML5 QR Code Scanner -->
+    <script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
+
+    <!-- QRCode Generator -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+
+    <!-- Supabase JS Client -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap');
+        body {
+            font-family: 'Inter', sans-serif;
+        }
+
+        /* Printable CSS Styling */
+        @media print {
+            body {
+                background: white !important;
+                color: black !important;
+            }
+            .no-print {
+                display: none !important;
+            }
+            .print-only {
+                display: block !important;
+            }
+            .page-break {
+                page-break-after: always;
+            }
+            .print-card {
+                border: 1px solid #ddd !important;
+                box-shadow: none !important;
+                background: white !important;
+                color: black !important;
+            }
+            .use-blank-letterhead .header-letterhead-img {
+                display: none !important;
+            }
+            .use-blank-letterhead .header-letterhead-spacer {
+                display: block !important;
+                height: 140px !important;
+            }
+        }
+
+        .header-letterhead-spacer {
+            display: none;
+        }
+
+        .print-only {
+            display: none;
+        }
+    </style>
+</head>
+<body class="bg-slate-950 text-slate-100 min-h-screen flex flex-col antialiased selection:bg-brand-500 selection:text-white">
+
+    <!-- TOP NAVIGATION BAR -->
+    <header class="border-b border-slate-800 bg-slate-900/90 backdrop-blur sticky top-0 z-40 no-print">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
+            <div class="flex items-center space-x-3">
+                <!-- LOGO ID-TIC SVG VECTORIZADO -->
+                <div class="w-11 h-11 bg-slate-950 rounded-xl p-1.5 flex items-center justify-center shadow-lg shadow-sky-500/10 border border-sky-500/30">
+                    <svg class="w-full h-full text-sky-400" viewBox="0 0 100 100" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round">
+                        <!-- Circuito D / ID-TIC Icon Vector -->
+                        <path d="M25 20 H50 C68 20 80 32 80 50 C80 68 68 80 50 80 H25 Z" stroke="#0ea5e9" stroke-width="8" fill="none"/>
+                        <path d="M15 65 L40 35 L60 55 L85 20" stroke="#0284c7" stroke-width="9"/>
+                        <polyline points="72,20 85,20 85,33" stroke="#0284c7" stroke-width="9" fill="none"/>
+                        <circle cx="25" cy="20" r="4" fill="#38bdf8"/>
+                        <circle cx="50" cy="80" r="4" fill="#38bdf8"/>
+                        <rect x="18" y="72" width="10" height="8" rx="1" fill="#0284c7"/>
+                    </svg>
+                </div>
+                <div>
+                    <h1 class="font-extrabold text-xl tracking-tight text-white flex items-center gap-2">
+                        ID<span class="text-sky-400">-TIC</span>
+                        <span class="text-[10px] font-bold px-2 py-0.5 bg-sky-500/10 text-sky-400 border border-sky-500/30 rounded-full uppercase tracking-wider">PRO</span>
+                    </h1>
+                    <p class="text-[11px] text-slate-400 font-medium">INVENTARIO DIGITAL DE EQUIPOS TIC • Escuela Primaria Porfirio Jerez Veras</p>
+                </div>
+            </div>
+
+            <div class="flex items-center space-x-2 sm:space-x-4">
+                <!-- Supabase Connection Indicator -->
+                <button onclick="openConfigModal()" id="dbStatusBtn" class="flex items-center gap-2 text-xs px-3 py-1.5 rounded-lg border border-slate-700 bg-slate-800 hover:bg-slate-700 transition">
+                    <span id="dbStatusDot" class="w-2 h-2 rounded-full bg-amber-500"></span>
+                    <span id="dbStatusText" class="hidden sm:inline text-slate-300">Modo Local / Demo</span>
+                    <i data-lucide="database" class="w-3.5 h-3.5 text-slate-400"></i>
+                </button>
+
+                <!-- Quick Scan Button -->
+                <button onclick="openScannerModal()" class="bg-gradient-to-r from-brand-600 to-accent-500 hover:from-brand-500 hover:to-accent-600 text-white font-semibold text-xs sm:text-sm px-3.5 py-1.5 sm:px-4 sm:py-2 rounded-lg flex items-center gap-2 shadow-lg shadow-brand-500/20 transition active:scale-95">
+                    <i data-lucide="camera" class="w-4 h-4"></i>
+                    <span>Escanear QR</span>
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <!-- MAIN APP CONTENT CONTAINER -->
+    <main class="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-6 no-print">
+
+        <!-- STATS / METRICS DASHBOARD -->
+        <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
+            <div class="bg-slate-900 border border-slate-800 rounded-xl p-4 flex items-center gap-4">
+                <div class="p-3 bg-blue-500/10 text-blue-400 rounded-lg">
+                    <i data-lucide="laptop" class="w-6 h-6"></i>
+                </div>
+                <div>
+                    <p class="text-xs text-slate-400 font-medium">Total Equipos</p>
+                    <h3 id="statTotal" class="text-xl font-bold text-white">0</h3>
+                </div>
+            </div>
+            <div class="bg-slate-900 border border-slate-800 rounded-xl p-4 flex items-center gap-4">
+                <div class="p-3 bg-emerald-500/10 text-emerald-400 rounded-lg">
+                    <i data-lucide="check-circle" class="w-6 h-6"></i>
+                </div>
+                <div>
+                    <p class="text-xs text-slate-400 font-medium">Operativos</p>
+                    <h3 id="statOperativos" class="text-xl font-bold text-emerald-400">0</h3>
+                </div>
+            </div>
+            <div class="bg-slate-900 border border-slate-800 rounded-xl p-4 flex items-center gap-4">
+                <div class="p-3 bg-amber-500/10 text-amber-400 rounded-lg">
+                    <i data-lucide="wrench" class="w-6 h-6"></i>
+                </div>
+                <div>
+                    <p class="text-xs text-slate-400 font-medium">Mantenimiento</p>
+                    <h3 id="statMante" class="text-xl font-bold text-amber-400">0</h3>
+                </div>
+            </div>
+            <div class="bg-slate-900 border border-slate-800 rounded-xl p-4 flex items-center gap-4">
+                <div class="p-3 bg-rose-500/10 text-rose-400 rounded-lg">
+                    <i data-lucide="alert-triangle" class="w-6 h-6"></i>
+                </div>
+                <div>
+                    <p class="text-xs text-slate-400 font-medium">Averiados / Retirados</p>
+                    <h3 id="statAveriados" class="text-xl font-bold text-rose-400">0</h3>
+                </div>
+            </div>
+        </div>
+
+        <!-- NAVIGATION TABS -->
+        <div class="flex flex-wrap items-center justify-between gap-4 border-b border-slate-800 pb-4 mb-6">
+            <div class="flex items-center gap-2 overflow-x-auto pb-1 sm:pb-0 w-full sm:w-auto">
+                <button onclick="switchTab('inventory')" id="tabBtnInventory" class="tab-btn px-4 py-2 rounded-lg text-sm font-medium transition flex items-center gap-2 bg-brand-600 text-white shadow-md">
+                    <i data-lucide="boxes" class="w-4 h-4"></i>
+                    <span>Inventario & QR</span>
+                </button>
+                <button onclick="switchTab('guide')" id="tabBtnGuide" class="tab-btn px-4 py-2 rounded-lg text-sm font-medium transition text-slate-400 hover:text-slate-200 hover:bg-slate-800 flex items-center gap-2">
+                    <i data-lucide="help-circle" class="w-4 h-4"></i>
+                    <span>¿Cómo Funciona?</span>
+                </button>
+                <button onclick="switchTab('covers')" id="tabBtnCovers" class="tab-btn px-4 py-2 rounded-lg text-sm font-medium transition text-slate-400 hover:text-slate-200 hover:bg-slate-800 flex items-center gap-2">
+                    <i data-lucide="layout-template" class="w-4 h-4"></i>
+                    <span>Modelos de Portada</span>
+                </button>
+                <button onclick="switchTab('github')" id="tabBtnGithub" class="tab-btn px-4 py-2 rounded-lg text-sm font-medium transition text-slate-400 hover:text-slate-200 hover:bg-slate-800 flex items-center gap-2">
+                    <i data-lucide="github" class="w-4 h-4"></i>
+                    <span>Despliegue GitHub</span>
+                </button>
+                <button onclick="switchTab('report')" id="tabBtnReport" class="tab-btn px-4 py-2 rounded-lg text-sm font-medium transition text-slate-400 hover:text-slate-200 hover:bg-slate-800 flex items-center gap-2">
+                    <i data-lucide="file-text" class="w-4 h-4"></i>
+                    <span>Reporte Oficial</span>
+                </button>
+                <button onclick="switchTab('labels')" id="tabBtnLabels" class="tab-btn px-4 py-2 rounded-lg text-sm font-medium transition text-slate-400 hover:text-slate-200 hover:bg-slate-800 flex items-center gap-2">
+                    <i data-lucide="printer" class="w-4 h-4"></i>
+                    <span>Etiquetas QR</span>
+                </button>
+            </div>
+
+            <div class="flex items-center gap-2 w-full sm:w-auto justify-end">
+                <button onclick="openEquipmentModal()" class="bg-slate-800 hover:bg-slate-700 text-white font-medium text-xs sm:text-sm px-3.5 py-2 rounded-lg border border-slate-700 flex items-center gap-2 transition">
+                    <i data-lucide="plus-circle" class="w-4 h-4 text-brand-400"></i>
+                    <span>Nuevo Equipo</span>
+                </button>
+            </div>
+        </div>
+
+        <!-- TAB CONTENT 1: INVENTORY MANAGEMENT -->
+        <section id="tabInventory" class="tab-content">
+            <!-- Search & Filter Controls -->
+            <div class="grid grid-cols-1 md:grid-cols-12 gap-3 mb-6">
+                <div class="md:col-span-5 relative">
+                    <i data-lucide="search" class="w-4 h-4 absolute left-3.5 top-3 text-slate-500"></i>
+                    <input type="text" id="searchInput" onkeyup="filterInventory()" placeholder="Buscar por ID (TIC-...), Marca, Serie, Ubicación..." class="w-full pl-10 pr-4 py-2 bg-slate-900 border border-slate-800 rounded-lg text-sm text-white placeholder-slate-500 focus:outline-none focus:border-brand-500 transition">
+                </div>
+                <div class="md:col-span-3">
+                    <select id="typeFilter" onchange="filterInventory()" class="w-full px-3 py-2 bg-slate-900 border border-slate-800 rounded-lg text-sm text-slate-300 focus:outline-none focus:border-brand-500">
+                        <option value="">Todos los Tipos</option>
+                        <option value="Laptop">Laptop / Chromebook</option>
+                        <option value="Tableta">Tableta</option>
+                        <option value="Pizarra Digital">Pizarra Digital Interactive</option>
+                        <option value="Proyector">Proyector / Data Show</option>
+                        <option value="PC Escritorio">PC Escritorio</option>
+                        <option value="Redes / Router">Redes / Router / Access Point</option>
+                        <option value="Otro">Otro Equipo</option>
+                    </select>
+                </div>
+                <div class="md:col-span-3">
+                    <select id="statusFilter" onchange="filterInventory()" class="w-full px-3 py-2 bg-slate-900 border border-slate-800 rounded-lg text-sm text-slate-300 focus:outline-none focus:border-brand-500">
+                        <option value="">Todos los Estados</option>
+                        <option value="Operativo">Operativo</option>
+                        <option value="En Mantenimiento">En Mantenimiento</option>
+                        <option value="Averiado">Averiado / Dañado</option>
+                        <option value="Obsoleto/Retirado">Obsoleto / Retirado</option>
+                    </select>
+                </div>
+                <div class="md:col-span-1 flex justify-end">
+                    <button onclick="resetFilters()" title="Limpiar Filtros" class="p-2 bg-slate-900 border border-slate-800 hover:bg-slate-800 rounded-lg text-slate-400 hover:text-white">
+                        <i data-lucide="rotate-ccw" class="w-5 h-5"></i>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Equipment Table / Responsive Cards -->
+            <div class="bg-slate-900 border border-slate-800 rounded-xl overflow-hidden shadow-xl">
+                <div class="overflow-x-auto">
+                    <table class="w-full text-left text-sm text-slate-300">
+                        <thead class="bg-slate-950/80 text-xs uppercase tracking-wider text-slate-400 border-b border-slate-800">
+                            <tr>
+                                <th class="py-3.5 px-4">Código / ID</th>
+                                <th class="py-3.5 px-4">Equipo / Marca</th>
+                                <th class="py-3.5 px-4">No. Serie</th>
+                                <th class="py-3.5 px-4">Ubicación</th>
+                                <th class="py-3.5 px-4">Estado</th>
+                                <th class="py-3.5 px-4 text-right">Acciones</th>
+                            </tr>
+                        </thead>
+                        <tbody id="inventoryTableBody" class="divide-y divide-slate-800">
+                            <!-- Rows generated dynamically -->
+                        </tbody>
+                    </table>
+                </div>
+
+                <!-- Empty State -->
+                <div id="emptyState" class="hidden p-12 text-center">
+                    <div class="w-16 h-16 mx-auto mb-4 bg-slate-800/80 text-slate-500 rounded-full flex items-center justify-center">
+                        <i data-lucide="inbox" class="w-8 h-8"></i>
+                    </div>
+                    <h3 class="text-base font-semibold text-white mb-1">No se encontraron equipos</h3>
+                    <p class="text-xs text-slate-400 max-w-sm mx-auto mb-4">Intenta ajustar la búsqueda o añade tu primer equipo al inventario.</p>
+                    <button onclick="openEquipmentModal()" class="bg-brand-600 hover:bg-brand-500 text-white text-xs px-4 py-2 rounded-lg font-medium">Añadir Nuevo Equipo</button>
+                </div>
+            </div>
+        </section>
+
+        <!-- TAB CONTENT: HOW IT WORKS / MANUAL -->
+        <section id="tabGuide" class="tab-content hidden">
+            <div class="bg-slate-900 border border-slate-800 rounded-xl p-6 mb-6">
+                <div class="flex items-center gap-3 mb-4">
+                    <div class="p-3 bg-brand-600/20 text-brand-400 rounded-xl border border-brand-500/30">
+                        <i data-lucide="help-circle" class="w-6 h-6"></i>
+                    </div>
+                    <div>
+                        <h2 class="text-lg font-bold text-white">Guía de Uso Rápido • ID-TIC</h2>
+                        <p class="text-xs text-slate-400">Paso a paso para gestionar los equipos del centro y cumplir tus indicadores de desempeño.</p>
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mt-6">
+                    <!-- Paso 1 -->
+                    <div class="p-5 bg-slate-950 rounded-xl border border-slate-800 relative overflow-hidden">
+                        <div class="text-brand-500 font-bold text-xs uppercase tracking-wider mb-1">Paso 1</div>
+                        <h3 class="text-base font-bold text-white mb-2 flex items-center gap-2">
+                            <i data-lucide="plus-circle" class="w-4 h-4 text-brand-400"></i>
+                            Registrar Equipos
+                        </h3>
+                        <p class="text-xs text-slate-400 leading-relaxed">
+                            Haz clic en <b>"Nuevo Equipo"</b>. Introduce el ID del equipo (ej: <code class="text-brand-300">TIC-2026-001</code>), tipo, marca, número de serie del fabricante, ubicación actual y estado operativo.
+                        </p>
+                    </div>
+
+                    <!-- Paso 2 -->
+                    <div class="p-5 bg-slate-950 rounded-xl border border-slate-800 relative overflow-hidden">
+                        <div class="text-accent-500 font-bold text-xs uppercase tracking-wider mb-1">Paso 2</div>
+                        <h3 class="text-base font-bold text-white mb-2 flex items-center gap-2">
+                            <i data-lucide="printer" class="w-4 h-4 text-accent-400"></i>
+                            Imprimir Pegatinas QR
+                        </h3>
+                        <p class="text-xs text-slate-400 leading-relaxed">
+                            Ve a la pestaña <b>"Etiquetas QR"</b>. Verás la lista de códigos QR generados automáticamente para cada ID. Haz clic en <b>"Imprimir Plancha de QR"</b> e imprímelos en papel adhesivo para pegarlos en las laptops, proyectores o pantallas.
+                        </p>
+                    </div>
+
+                    <!-- Paso 3 -->
+                    <div class="p-5 bg-slate-950 rounded-xl border border-slate-800 relative overflow-hidden">
+                        <div class="text-emerald-500 font-bold text-xs uppercase tracking-wider mb-1">Paso 3</div>
+                        <h3 class="text-base font-bold text-white mb-2 flex items-center gap-2">
+                            <i data-lucide="camera" class="w-4 h-4 text-emerald-400"></i>
+                            Escanear desde tu Celular
+                        </h3>
+                        <p class="text-xs text-slate-400 leading-relaxed">
+                            Presiona el botón superior <b>"Escanear QR"</b>. Apunta con la cámara del teléfono a la etiqueta pegada en el equipo para buscarlo inmediatamente y cambiar su estado o ubicación en segundos.
+                        </p>
+                    </div>
+
+                    <!-- Paso 4 -->
+                    <div class="p-5 bg-slate-950 rounded-xl border border-slate-800 relative overflow-hidden">
+                        <div class="text-blue-500 font-bold text-xs uppercase tracking-wider mb-1">Paso 4</div>
+                        <h3 class="text-base font-bold text-white mb-2 flex items-center gap-2">
+                            <i data-lucide="file-check" class="w-4 h-4 text-blue-400"></i>
+                            Reportes para Septiembre y Junio
+                        </h3>
+                        <p class="text-xs text-slate-400 leading-relaxed">
+                            En la pestaña <b>"Reporte Oficial"</b>, el sistema organiza los datos con la cabecera oficial del MINERD/Distrito 07-06 y el formato requerido para la firma del Director <b>Juan Ramón Paulino Balbi</b>.
+                        </p>
+                    </div>
+                </div>
+
+                <div class="mt-6 p-4 bg-slate-950/80 rounded-xl border border-slate-800 flex items-center justify-between">
+                    <div class="flex items-center gap-3">
+                        <i data-lucide="database" class="w-5 h-5 text-amber-400"></i>
+                        <div>
+                            <p class="text-xs font-bold text-white">Guarda tus datos sin perder nada</p>
+                            <p class="text-[11px] text-slate-400">Tus datos se guardan en tu celular/PC. También puedes conectar Supabase en el botón de la barra superior para sincronizar en la nube.</p>
+                        </div>
+                    </div>
+                    <button onclick="switchTab('inventory')" class="bg-brand-600 hover:bg-brand-500 text-white text-xs font-medium px-4 py-2 rounded-lg shrink-0">
+                        Probar Inventario
+                    </button>
+                </div>
+            </div>
+        </section>
+
+        <!-- TAB CONTENT 2: COVER PAGE MODELS -->
+        <section id="tabCovers" class="tab-content hidden">
+            <div class="bg-slate-900 border border-slate-800 rounded-xl p-6 mb-6">
+                <div class="flex flex-wrap items-center justify-between gap-4 mb-4">
+                    <div>
+                        <h2 class="text-base font-bold text-white flex items-center gap-2">
+                            <i data-lucide="layout-template" class="w-5 h-5 text-accent-500"></i>
+                            Selector de Modelos de Portada Institucional
+                        </h2>
+                        <p class="text-xs text-slate-400 mt-0.5">Elige entre 4 diseños profesionales adaptados para los informes y portafolios del MINERD y SISMAP.</p>
+                    </div>
+                    <button onclick="window.print()" class="bg-accent-600 hover:bg-accent-500 text-white font-medium text-xs sm:text-sm px-4 py-2 rounded-lg flex items-center gap-2 shadow-lg shadow-accent-600/20">
+                        <i data-lucide="printer" class="w-4 h-4"></i>
+                        <span>Imprimir Portada Activa</span>
+                    </button>
+                </div>
+
+                <!-- Cover Model Selector Buttons -->
+                <div class="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                    <button onclick="setCoverModel(1)" id="coverBtn1" class="p-3 rounded-lg border border-brand-500 bg-brand-600/20 text-white text-xs font-semibold flex flex-col items-center gap-1 transition">
+                        <i data-lucide="award" class="w-4 h-4 text-brand-400"></i>
+                        <span>Modelo 1: Formal Institucional</span>
+                    </button>
+                    <button onclick="setCoverModel(2)" id="coverBtn2" class="p-3 rounded-lg border border-slate-700 bg-slate-950 text-slate-300 text-xs font-semibold flex flex-col items-center gap-1 transition hover:border-slate-500">
+                        <i data-lucide="cpu" class="w-4 h-4 text-accent-400"></i>
+                        <span>Modelo 2: Moderno TIC Minimal</span>
+                    </button>
+                    <button onclick="setCoverModel(3)" id="coverBtn3" class="p-3 rounded-lg border border-slate-700 bg-slate-950 text-slate-300 text-xs font-semibold flex flex-col items-center gap-1 transition hover:border-slate-500">
+                        <i data-lucide="shield-check" class="w-4 h-4 text-emerald-400"></i>
+                        <span>Modelo 3: Ejecutivo SISMAP</span>
+                    </button>
+                    <button onclick="setCoverModel(4)" id="coverBtn4" class="p-3 rounded-lg border border-slate-700 bg-slate-950 text-slate-300 text-xs font-semibold flex flex-col items-center gap-1 transition hover:border-slate-500">
+                        <i data-lucide="book-open" class="w-4 h-4 text-blue-400"></i>
+                        <span>Modelo 4: Portafolio Pedagógico</span>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Cover Preview Render Area -->
+            <div id="coverPreviewContainer" class="bg-white text-slate-900 rounded-xl p-10 shadow-2xl border border-slate-200 print-card max-w-4xl mx-auto min-h-[600px] flex flex-col justify-between">
+                <!-- Rendered dynamically via JS -->
+            </div>
+        </section>
+
+        <!-- TAB CONTENT 3: GITHUB DEPLOYMENT ASSISTANT -->
+        <section id="tabGithub" class="tab-content hidden">
+            <div class="bg-slate-900 border border-slate-800 rounded-xl p-6 mb-6">
+                <h2 class="text-base font-bold text-white flex items-center gap-2 mb-1">
+                    <i data-lucide="github" class="w-5 h-5 text-brand-400"></i>
+                    Despliegue Rápido en GitHub Pages
+                </h2>
+                <p class="text-xs text-slate-400 mb-6">Sigue estos sencillos pasos para subir tu aplicación de inventario a GitHub y tenerla disponible en la nube accesible desde cualquier celular.</p>
+
+                <div class="space-y-6">
+                    <div class="p-4 bg-slate-950 rounded-xl border border-slate-800 flex gap-4">
+                        <div class="w-8 h-8 rounded-full bg-brand-600/20 text-brand-400 font-bold flex items-center justify-center shrink-0 border border-brand-500/30">1</div>
+                        <div>
+                            <h3 class="text-sm font-bold text-white">Crea un Repositorio en GitHub</h3>
+                            <p class="text-xs text-slate-400 mt-1">Entra a <a href="https://github.com" target="_blank" class="text-brand-400 underline">github.com</a>, crea un nuevo repositorio público llamado <code class="bg-slate-900 px-1.5 py-0.5 rounded text-brand-300">dinamizador-tic-pro</code>.</p>
+                        </div>
+                    </div>
+
+                    <div class="p-4 bg-slate-950 rounded-xl border border-slate-800 flex gap-4">
+                        <div class="w-8 h-8 rounded-full bg-brand-600/20 text-brand-400 font-bold flex items-center justify-center shrink-0 border border-brand-500/30">2</div>
+                        <div class="flex-1">
+                            <h3 class="text-sm font-bold text-white">Guarda este archivo como <code class="text-brand-300">index.html</code></h3>
+                            <p class="text-xs text-slate-400 mt-1">Copia el código completo de esta aplicación y guárdalo exactamente con el nombre <code class="bg-slate-900 px-1.5 py-0.5 rounded text-brand-300">index.html</code>.</p>
+                            <button onclick="downloadAppFile()" class="mt-3 bg-brand-600 hover:bg-brand-500 text-white text-xs px-3.5 py-2 rounded-lg font-medium flex items-center gap-2">
+                                <i data-lucide="download" class="w-4 h-4"></i>
+                                <span>Descargar archivo index.html</span>
+                            </button>
+                        </div>
+                    </div>
+
+                    <div class="p-4 bg-slate-950 rounded-xl border border-slate-800 flex gap-4">
+                        <div class="w-8 h-8 rounded-full bg-brand-600/20 text-brand-400 font-bold flex items-center justify-center shrink-0 border border-brand-500/30">3</div>
+                        <div>
+                            <h3 class="text-sm font-bold text-white">Sube el archivo a tu repositorio</h3>
+                            <p class="text-xs text-slate-400 mt-1">Sube el archivo <code class="text-slate-300">index.html</code> mediante la interfaz web de GitHub ("Add file > Upload files") o por terminal:</p>
+                            <pre class="mt-2 p-3 bg-slate-900 text-brand-300 rounded-lg text-xs overflow-x-auto font-mono">
+git init
+git add index.html
+git commit -m "Deploy Dinamizador TIC Pro"
+git branch -M main
+git remote add origin https://github.com/TU_USUARIO/dinamizador-tic-pro.git
+git push -u origin main
+                            </pre>
+                        </div>
+                    </div>
+
+                    <div class="p-4 bg-slate-950 rounded-xl border border-slate-800 flex gap-4">
+                        <div class="w-8 h-8 rounded-full bg-brand-600/20 text-brand-400 font-bold flex items-center justify-center shrink-0 border border-brand-500/30">4</div>
+                        <div>
+                            <h3 class="text-sm font-bold text-white">Activa GitHub Pages</h3>
+                            <p class="text-xs text-slate-400 mt-1">Ve a la pestaña <b>Settings</b> de tu repositorio en GitHub > <b>Pages</b> > En SIS/Branch selecciona <code class="text-slate-300">main</code> y carpeta <code class="text-slate-300">/ (root)</code>. ¡Listo! Tu app estará en línea con URL pública.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- TAB CONTENT 4: OFFICIAL MINERD REPORT -->
+        <section id="tabReport" class="tab-content hidden">
+            <div class="bg-slate-900 border border-slate-800 rounded-xl p-6 mb-6 flex flex-wrap items-center justify-between gap-4">
+                <div>
+                    <h2 class="text-base font-bold text-white flex items-center gap-2">
+                        <i data-lucide="file-check" class="w-5 h-5 text-emerald-400"></i>
+                        Reporte Oficial de Inventario TIC
+                    </h2>
+                    <p class="text-xs text-slate-400 mt-0.5">Vista maquetada con el timbrado oficial de la Escuela Primaria Porfirio Jerez Veras.</p>
+                </div>
+                
+                <div class="flex flex-wrap items-center gap-3">
+                    <label class="flex items-center gap-2 text-xs text-slate-300 cursor-pointer bg-slate-800 px-3 py-2 rounded-lg border border-slate-700">
+                        <input type="checkbox" id="blankLetterheadCheck" onchange="toggleBlankLetterhead()" class="rounded border-slate-700 text-brand-600 focus:ring-brand-500 bg-slate-900">
+                        <span>Espacio para papel pre-impreso</span>
+                    </label>
+
+                    <button onclick="window.print()" class="bg-emerald-600 hover:bg-emerald-500 text-white font-medium text-xs sm:text-sm px-4 py-2 rounded-lg flex items-center gap-2 shadow-lg shadow-emerald-600/20">
+                        <i data-lucide="printer" class="w-4 h-4"></i>
+                        <span>Imprimir Reporte</span>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Report Sheet Preview Container (Rendered on Screen & Printed) -->
+            <div id="reportPrintArea" class="bg-white text-slate-900 rounded-xl p-8 shadow-2xl border border-slate-200 print-card max-w-4xl mx-auto">
+                
+                <!-- TIMBRADO ESCOLAR ENCABEZADO -->
+                <div class="header-letterhead-container mb-6 border-b border-slate-200 pb-4">
+                    <img id="schoolLetterheadImg" src="https://lh3.googleusercontent.com/d/1Xy84sJ3aC28vLgT5fB5Kk1M89l9Xv3Z0" alt="Timbrado Escuela Primaria Porfirio Jerez Veras" class="header-letterhead-img w-full h-auto object-contain max-h-36 mx-auto" onerror="this.onerror=null; this.src='https://placehold.co/900x150/ffffff/0f172a?text=ESCUELA+PRIMARIA+PORFIRIO+JEREZ+VERAS+DISTRITO+07-06';">
+                    <div class="header-letterhead-spacer"></div>
+                </div>
+
+                <!-- Report Title -->
+                <div class="text-center mb-6">
+                    <h2 class="text-lg font-black text-slate-900 uppercase tracking-tight">INFORME OFICIAL DE INVENTARIO Y CONTROL DE EQUIPOS TIC</h2>
+                    <p class="text-xs font-semibold text-brand-700 mt-0.5">Gestión de Recursos Tecnológicos • Corte de Registro SISMAP</p>
+                </div>
+
+                <!-- Report Meta Data -->
+                <div class="grid grid-cols-2 sm:grid-cols-3 gap-4 text-xs mb-6 bg-slate-50 p-4 rounded-lg border border-slate-200">
+                    <div>
+                        <span class="font-bold text-slate-600 block">Dinamizador TIC:</span>
+                        <span class="text-slate-900 font-semibold">Jorge Luis de la Cruz Corcino</span>
+                    </div>
+                    <div>
+                        <span class="font-bold text-slate-600 block">Director del Centro:</span>
+                        <span class="text-slate-900 font-semibold">Juan Ramón Paulino Balbi</span>
+                    </div>
+                    <div>
+                        <span class="font-bold text-slate-600 block">Fecha de Emisión:</span>
+                        <span id="reportDate" class="text-slate-900 font-semibold">--/--/----</span>
+                    </div>
+                </div>
+
+                <!-- Equipment Summary Table -->
+                <div class="mb-6">
+                    <h3 class="text-xs font-bold uppercase tracking-wider text-slate-700 mb-2">Desglose de Equipos Registrados</h3>
+                    <table class="w-full text-left text-xs border-collapse">
+                        <thead>
+                            <tr class="bg-slate-100 border-y border-slate-300 font-bold text-slate-700">
+                                <th class="p-2 border-r border-slate-200">No. ID</th>
+                                <th class="p-2 border-r border-slate-200">Tipo de Equipo</th>
+                                <th class="p-2 border-r border-slate-200">Marca / Modelo</th>
+                                <th class="p-2 border-r border-slate-200">Número de Serie</th>
+                                <th class="p-2 border-r border-slate-200">Ubicación</th>
+                                <th class="p-2">Estado</th>
+                            </tr>
+                        </thead>
+                        <tbody id="reportTableBody" class="divide-y divide-slate-200">
+                            <!-- Dynamic Content -->
+                        </tbody>
+                    </table>
+                </div>
+
+                <!-- Report Summary Breakdown -->
+                <div class="grid grid-cols-4 gap-2 text-center text-xs mb-12 p-3 bg-slate-100 rounded border border-slate-200">
+                    <div><span class="font-bold">Total:</span> <span id="repTotal">0</span></div>
+                    <div><span class="font-bold text-emerald-700">Operativos:</span> <span id="repOp">0</span></div>
+                    <div><span class="font-bold text-amber-700">Mantenimiento:</span> <span id="repMant">0</span></div>
+                    <div><span class="font-bold text-rose-700">Averiados/Retirados:</span> <span id="repAv">0</span></div>
+                </div>
+
+                <!-- Signatures Block -->
+                <div class="mt-16 pt-8 border-t border-slate-300 grid grid-cols-2 gap-12 text-center">
+                    <div>
+                        <div class="border-b border-slate-400 mb-2 mx-8"></div>
+                        <p class="text-xs font-bold text-slate-800">Jorge Luis de la Cruz Corcino</p>
+                        <p class="text-[10px] text-slate-500 uppercase">Dinamizador TIC del Centro</p>
+                    </div>
+                    <div>
+                        <div class="border-b border-slate-400 mb-2 mx-8"></div>
+                        <p class="text-xs font-bold text-slate-800">Juan Ramón Paulino Balbi</p>
+                        <p class="text-[10px] text-slate-500 uppercase">Director del Centro Educativo</p>
+                    </div>
+                </div>
+
+            </div>
+        </section>
+
+        <!-- TAB CONTENT 5: BATCH QR PRINT LABELS -->
+        <section id="tabLabels" class="tab-content hidden">
+            <div class="bg-slate-900 border border-slate-800 rounded-xl p-6 mb-6 flex flex-wrap items-center justify-between gap-4">
+                <div>
+                    <h2 class="text-base font-bold text-white flex items-center gap-2">
+                        <i data-lucide="qr-code" class="w-5 h-5 text-brand-400"></i>
+                        Generador y Plancha de Etiquetas QR
+                    </h2>
+                    <p class="text-xs text-slate-400 mt-0.5">Listas para imprimir en papel adhesivo y pegar en los chasis de los equipos.</p>
+                </div>
+                <button onclick="window.print()" class="bg-brand-600 hover:bg-brand-500 text-white font-medium text-xs sm:text-sm px-4 py-2 rounded-lg flex items-center gap-2">
+                    <i data-lucide="printer" class="w-4 h-4"></i>
+                    <span>Imprimir Plancha de QR</span>
+                </button>
+            </div>
+
+            <!-- Labels Grid -->
+            <div id="labelsContainer" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4 bg-white p-6 rounded-xl border border-slate-200 print-card">
+                <!-- Dynamically generated QR Labels -->
+            </div>
+        </section>
+
+    </main>
+
+    <!-- PRINTABLE REPORT ONLY VIEW FOR CLEAN OUTPUT -->
+    <div class="print-only p-8 bg-white text-slate-900">
+        <!-- Exact replica rendered automatically during window.print() -->
+    </div>
+
+
+    <!-- MODAL: ADD / EDIT EQUIPMENT -->
+    <div id="equipmentModal" class="fixed inset-0 bg-slate-950/80 backdrop-blur-sm z-50 flex items-center justify-center hidden p-4 no-print">
+        <div class="bg-slate-900 border border-slate-800 rounded-xl max-w-lg w-full overflow-hidden shadow-2xl">
+            <div class="px-6 py-4 border-b border-slate-800 flex items-center justify-between">
+                <h3 id="modalTitle" class="font-bold text-white text-base">Registrar Nuevo Equipo</h3>
+                <button onclick="closeEquipmentModal()" class="text-slate-400 hover:text-white p-1">
+                    <i data-lucide="x" class="w-5 h-5"></i>
+                </button>
+            </div>
+            <form id="equipmentForm" onsubmit="saveEquipment(event)" class="p-6 space-y-4">
+                <input type="hidden" id="eqInternalId">
+                
+                <div class="grid grid-cols-2 gap-3 sm:gap-4">
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-400 mb-1">Código ID Activo *</label>
+                        <input type="text" id="eqId" required placeholder="TIC-2026-001" class="w-full px-3 py-2 bg-slate-950 border border-slate-800 rounded-lg text-xs sm:text-sm text-white focus:outline-none focus:border-brand-500">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-400 mb-1">Tipo de Equipo *</label>
+                        <select id="eqType" required class="w-full px-3 py-2 bg-slate-950 border border-slate-800 rounded-lg text-xs sm:text-sm text-slate-300 focus:outline-none focus:border-brand-500">
+                            <option value="Laptop">Laptop / Chromebook</option>
+                            <option value="Tableta">Tableta</option>
+                            <option value="Pizarra Digital">Pizarra Digital Interactive</option>
+                            <option value="Proyector">Proyector / Data Show</option>
+                            <option value="PC Escritorio">PC Escritorio</option>
+                            <option value="Redes / Router">Redes / Router</option>
+                            <option value="Otro">Otro</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-2 gap-3 sm:gap-4">
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-400 mb-1">Marca y Modelo</label>
+                        <input type="text" id="eqBrand" placeholder="Ej: HP ProBook 440" class="w-full px-3 py-2 bg-slate-950 border border-slate-800 rounded-lg text-sm text-white focus:outline-none focus:border-brand-500">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-400 mb-1">Número de Serie</label>
+                        <input type="text" id="eqSerial" placeholder="SN-12345678" class="w-full px-3 py-2 bg-slate-950 border border-slate-800 rounded-lg text-sm text-white focus:outline-none focus:border-brand-500">
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-2 gap-3 sm:gap-4">
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-400 mb-1">Ubicación Actual *</label>
+                        <input type="text" id="eqLocation" required placeholder="Ej: Laboratorio TIC" class="w-full px-3 py-2 bg-slate-950 border border-slate-800 rounded-lg text-xs sm:text-sm text-white focus:outline-none focus:border-brand-500">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-400 mb-1">Estado Operativo *</label>
+                        <select id="eqStatus" required class="w-full px-3 py-2 bg-slate-950 border border-slate-800 rounded-lg text-xs sm:text-sm text-slate-300 focus:outline-none focus:border-brand-500">
+                            <option value="Operativo">Operativo</option>
+                            <option value="En Mantenimiento">En Mantenimiento</option>
+                            <option value="Averiado">Averiado / Dañado</option>
+                            <option value="Obsoleto/Retirado">Obsoleto / Retirado</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div>
+                    <label class="block text-xs font-semibold text-slate-400 mb-1">Observaciones / Detalles Técnicos</label>
+                    <textarea id="eqNotes" rows="2" placeholder="Ej: Cargador original, pantalla intacta..." class="w-full px-3 py-2 bg-slate-950 border border-slate-800 rounded-lg text-sm text-white focus:outline-none focus:border-brand-500"></textarea>
+                </div>
+
+                <div class="pt-2 flex justify-end gap-3">
+                    <button type="button" onclick="closeEquipmentModal()" class="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-medium rounded-lg">Cancelar</button>
+                    <button type="submit" class="px-4 py-2 bg-brand-600 hover:bg-brand-500 text-white text-xs font-medium rounded-lg shadow-md">Guardar Equipo</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+
+    <!-- MODAL: LIVE CAMERA QR SCANNER -->
+    <div id="scannerModal" class="fixed inset-0 bg-slate-950/90 backdrop-blur-md z-50 flex items-center justify-center hidden p-4 no-print">
+        <div class="bg-slate-900 border border-slate-800 rounded-2xl max-w-md w-full overflow-hidden shadow-2xl relative">
+            <div class="p-4 border-b border-slate-800 flex items-center justify-between">
+                <h3 class="font-bold text-white text-sm flex items-center gap-2">
+                    <i data-lucide="scan" class="w-4 h-4 text-brand-400"></i>
+                    Escanear Código QR de Equipo
+                </h3>
+                <button onclick="closeScannerModal()" class="text-slate-400 hover:text-white p-1">
+                    <i data-lucide="x" class="w-5 h-5"></i>
+                </button>
+            </div>
+
+            <div class="p-4">
+                <!-- Video Camera Canvas Container -->
+                <div id="qrReader" class="w-full bg-slate-950 rounded-xl overflow-hidden border border-slate-800 min-h-[260px]"></div>
+                
+                <p class="text-xs text-slate-400 text-center mt-3">Apunta con la cámara directamente al sticker del código QR pegado en la laptop o equipo.</p>
+                
+                <!-- Direct Manual Code Fallback -->
+                <div class="mt-4 pt-3 border-t border-slate-800 flex gap-2">
+                    <input type="text" id="manualQrInput" placeholder="O escribe el ID (ej: TIC-2026-001)" class="flex-1 px-3 py-1.5 bg-slate-950 border border-slate-800 rounded-lg text-xs text-white">
+                    <button onclick="handleManualQrSearch()" class="bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs px-3 py-1.5 rounded-lg">Buscar</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+
+    <!-- MODAL: SUPABASE CONFIGURATION & SQL SCRIPT -->
+    <div id="configModal" class="fixed inset-0 bg-slate-950/80 backdrop-blur-sm z-50 flex items-center justify-center hidden p-4 no-print">
+        <div class="bg-slate-900 border border-slate-800 rounded-xl max-w-lg w-full overflow-hidden shadow-2xl">
+            <div class="px-6 py-4 border-b border-slate-800 flex items-center justify-between">
+                <h3 class="font-bold text-white text-base flex items-center gap-2">
+                    <i data-lucide="database" class="w-5 h-5 text-brand-400"></i>
+                    Conexión a Supabase
+                </h3>
+                <button onclick="closeConfigModal()" class="text-slate-400 hover:text-white p-1">
+                    <i data-lucide="x" class="w-5 h-5"></i>
+                </button>
+            </div>
+            
+            <div class="p-6 space-y-4">
+                <p class="text-xs text-slate-400">Ingresa tus credenciales de Supabase para sincronizar el inventario en la nube. Si lo dejas vacío, la app funcionará en **Modo Local** guardando datos en tu navegador.</p>
+                
+                <div>
+                    <label class="block text-xs font-semibold text-slate-400 mb-1">Supabase URL</label>
+                    <input type="text" id="supabaseUrlInput" placeholder="https://xyzcompany.supabase.co" class="w-full px-3 py-2 bg-slate-950 border border-slate-800 rounded-lg text-xs text-white focus:outline-none focus:border-brand-500">
+                </div>
+
+                <div>
+                    <label class="block text-xs font-semibold text-slate-400 mb-1">Supabase Anon Key</label>
+                    <input type="password" id="supabaseKeyInput" placeholder="eyJhbGciOiJIUzI1NiIsInR..." class="w-full px-3 py-2 bg-slate-950 border border-slate-800 rounded-lg text-xs text-white focus:outline-none focus:border-brand-500">
+                </div>
+
+                <!-- SQL Script Copy Accordion -->
+                <div class="pt-2">
+                    <details class="bg-slate-950 border border-slate-800 rounded-lg p-3 text-xs">
+                        <summary class="font-medium text-brand-400 cursor-pointer flex items-center justify-between">
+                            <span>Ver Script SQL para crear la tabla en Supabase</span>
+                        </summary>
+                        <pre class="mt-2 p-2 bg-slate-900 text-slate-300 rounded border border-slate-800 text-[10px] overflow-x-auto selection:bg-brand-500 selection:text-white">
+CREATE TABLE IF NOT EXISTS equipos (
+  id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+  asset_id TEXT UNIQUE NOT NULL,
+  tipo TEXT NOT NULL,
+  marca TEXT,
+  serie TEXT,
+  ubicacion TEXT NOT NULL,
+  estado TEXT NOT NULL,
+  notas TEXT,
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+                        </pre>
+                    </details>
+                </div>
+
+                <div class="pt-2 flex justify-between items-center">
+                    <button onclick="clearSupabaseConfig()" class="text-xs text-rose-400 hover:underline">Desconectar / Usar Local</button>
+                    <div class="flex gap-2">
+                        <button onclick="closeConfigModal()" class="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-medium rounded-lg">Cerrar</button>
+                        <button onclick="saveSupabaseConfig()" class="px-4 py-2 bg-brand-600 hover:bg-brand-500 text-white text-xs font-medium rounded-lg">Guardar & Conectar</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+
+    <!-- JAVASCRIPT APPLICATION LOGIC -->
+    <script>
+        // Default Sample Initial Data
+        const SAMPLE_EQUIPMENT = [
+            { id: '1', asset_id: 'TIC-2026-001', tipo: 'Laptop', marca: 'HP ProBook 440 G8', serie: '5CD123456X', ubicacion: 'Laboratorio TIC', estado: 'Operativo', notas: 'Laptop asignada al carrito de préstamos' },
+            { id: '2', asset_id: 'TIC-2026-002', tipo: 'Pizarra Digital', marca: 'SmartTech 75"', serie: 'ST75-987652', ubicacion: 'Aula 4to A', estado: 'Operativo', notas: 'Conectada a la red WiFi del centro' },
+            { id: '3', asset_id: 'TIC-2026-003', tipo: 'Proyector', marca: 'Epson PowerLite X41', serie: 'QW87654321', ubicacion: 'Depósito TIC', estado: 'En Mantenimiento', notas: 'Pendiente cambio de lámpara' },
+            { id: '4', asset_id: 'TIC-2026-004', tipo: 'Tableta', marca: 'Lenovo Tab M10', serie: 'HA88712399', ubicacion: 'Biblioteca', estado: 'Operativo', notas: 'Uso pedagógico con estudiantes' },
+            { id: '5', asset_id: 'TIC-2026-005', tipo: 'Redes / Router', marca: 'MikroTik hEX', serie: 'MT-90812301', ubicacion: 'Dirección', estado: 'Operativo', notas: 'Router principal de distribución de internet' }
+        ];
+
+        // App State
+        let equipmentData = [];
+        let supabaseClient = null;
+        let html5QrScanner = null;
+        let currentCoverModel = 1;
+
+        // On Page Load
+        window.addEventListener('DOMContentLoaded', async () => {
+            lucide.createIcons();
+            initSupabase();
+            await loadEquipmentData();
+            updateReportDate();
+            renderCoverModel(1);
+        });
+
+        // Initialize Supabase Client if credentials exist
+        function initSupabase() {
+            const url = localStorage.getItem('dtic_sp_url');
+            const key = localStorage.getItem('dtic_sp_key');
+
+            const statusDot = document.getElementById('dbStatusDot');
+            const statusText = document.getElementById('dbStatusText');
+
+            if (url && key && window.supabase) {
+                try {
+                    supabaseClient = window.supabase.createClient(url, key);
+                    if (statusDot) statusDot.className = 'w-2 h-2 rounded-full bg-emerald-500';
+                    if (statusText) statusText.innerText = 'Supabase Conectado';
+                } catch (err) {
+                    console.error("Error al conectar con Supabase:", err);
+                    if (statusDot) statusDot.className = 'w-2 h-2 rounded-full bg-rose-500';
+                    if (statusText) statusText.innerText = 'Error Supabase';
+                }
+            } else {
+                if (statusDot) statusDot.className = 'w-2 h-2 rounded-full bg-amber-500';
+                if (statusText) statusText.innerText = 'Modo Local / Demo';
+            }
+        }
+
+        // Toggle Blank Letterhead Space for pre-printed physical paper
+        function toggleBlankLetterhead() {
+            const isChecked = document.getElementById('blankLetterheadCheck').checked;
+            const printArea = document.getElementById('reportPrintArea');
+            if (isChecked) {
+                printArea.classList.add('use-blank-letterhead');
+                document.getElementById('schoolLetterheadImg').style.display = 'none';
+            } else {
+                printArea.classList.remove('use-blank-letterhead');
+                document.getElementById('schoolLetterheadImg').style.display = 'block';
+            }
+        }
+
+        // Load Equipment from Supabase or LocalStorage
+        async function loadEquipmentData() {
+            if (supabaseClient) {
+                try {
+                    const { data, error } = await supabaseClient.from('equipos').select('*').order('created_at', { ascending: false });
+                    if (error) throw error;
+                    equipmentData = data || [];
+                } catch (err) {
+                    console.warn("Falló carga desde Supabase, usando localStorage local:", err);
+                    loadLocalData();
+                }
+            } else {
+                loadLocalData();
+            }
+            renderAllViews();
+        }
+
+        function loadLocalData() {
+            const stored = localStorage.getItem('dtic_equipment');
+            if (stored) {
+                equipmentData = JSON.parse(stored);
+            } else {
+                equipmentData = [...SAMPLE_EQUIPMENT];
+                saveLocalData();
+            }
+        }
+
+        function saveLocalData() {
+            localStorage.setItem('dtic_equipment', JSON.stringify(equipmentData));
+        }
+
+        // Render all views and metrics
+        function renderAllViews() {
+            renderInventoryTable(equipmentData);
+            renderMetrics();
+            renderReportView();
+            renderQrLabels();
+            renderCoverModel(currentCoverModel);
+        }
+
+        // Render Metrics Summary
+        function renderMetrics() {
+            const total = equipmentData.length;
+            const op = equipmentData.filter(e => e.estado === 'Operativo').length;
+            const mante = equipmentData.filter(e => e.estado === 'En Mantenimiento').length;
+            const av = equipmentData.filter(e => e.estado === 'Averiado' || e.estado === 'Obsoleto/Retirado').length;
+
+            document.getElementById('statTotal').innerText = total;
+            document.getElementById('statOperativos').innerText = op;
+            document.getElementById('statMante').innerText = mante;
+            document.getElementById('statAveriados').innerText = av;
+
+            document.getElementById('repTotal').innerText = total;
+            document.getElementById('repOp').innerText = op;
+            document.getElementById('repMant').innerText = mante;
+            document.getElementById('repAv').innerText = av;
+        }
+
+        // Filter Inventory Table
+        function filterInventory() {
+            const search = document.getElementById('searchInput').value.toLowerCase();
+            const type = document.getElementById('typeFilter').value;
+            const status = document.getElementById('statusFilter').value;
+
+            const filtered = equipmentData.filter(item => {
+                const matchesSearch = (item.asset_id && item.asset_id.toLowerCase().includes(search)) ||
+                                      (item.marca && item.marca.toLowerCase().includes(search)) ||
+                                      (item.serie && item.serie.toLowerCase().includes(search)) ||
+                                      (item.ubicacion && item.ubicacion.toLowerCase().includes(search));
+                const matchesType = !type || item.tipo === type;
+                const matchesStatus = !status || item.estado === status;
+                return matchesSearch && matchesType && matchesStatus;
+            });
+
+            renderInventoryTable(filtered);
+        }
+
+        function resetFilters() {
+            document.getElementById('searchInput').value = '';
+            document.getElementById('typeFilter').value = '';
+            document.getElementById('statusFilter').value = '';
+            renderInventoryTable(equipmentData);
+        }
+
+        // Render Inventory Table
+        function renderInventoryTable(data) {
+            const tbody = document.getElementById('inventoryTableBody');
+            const emptyState = document.getElementById('emptyState');
+            tbody.innerHTML = '';
+
+            if (!data || data.length === 0) {
+                emptyState.classList.remove('hidden');
+                return;
+            }
+            emptyState.classList.add('hidden');
+
+            data.forEach(item => {
+                let badgeClass = 'bg-slate-800 text-slate-300';
+                if (item.estado === 'Operativo') badgeClass = 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20';
+                else if (item.estado === 'En Mantenimiento') badgeClass = 'bg-amber-500/10 text-amber-400 border border-amber-500/20';
+                else if (item.estado === 'Averiado' || item.estado === 'Obsoleto/Retirado') badgeClass = 'bg-rose-500/10 text-rose-400 border border-rose-500/20';
+
+                const tr = document.createElement('tr');
+                tr.className = 'hover:bg-slate-800/50 transition';
+                tr.innerHTML = `
+                    <td class="py-3.5 px-4 font-mono text-xs font-semibold text-brand-400">${item.asset_id}</td>
+                    <td class="py-3.5 px-4">
+                        <div class="font-medium text-white">${item.marca || 'N/A'}</div>
+                        <div class="text-xs text-slate-400">${item.tipo}</div>
+                    </td>
+                    <td class="py-3.5 px-4 font-mono text-xs text-slate-400">${item.serie || '---'}</td>
+                    <td class="py-3.5 px-4 text-xs text-slate-300">${item.ubicacion}</td>
+                    <td class="py-3.5 px-4">
+                        <span class="px-2.5 py-1 rounded-full text-[11px] font-medium ${badgeClass}">
+                            ${item.estado}
+                        </span>
+                    </td>
+                    <td class="py-3.5 px-4 text-right space-x-1">
+                        <button onclick="editEquipment('${item.id || item.asset_id}')" title="Editar" class="p-1.5 hover:bg-slate-700 rounded-md text-slate-400 hover:text-white transition">
+                            <i data-lucide="edit-3" class="w-4 h-4"></i>
+                        </button>
+                        <button onclick="deleteEquipment('${item.id || item.asset_id}')" title="Eliminar" class="p-1.5 hover:bg-rose-900/40 rounded-md text-slate-400 hover:text-rose-400 transition">
+                            <i data-lucide="trash-2" class="w-4 h-4"></i>
+                        </button>
+                    </td>
+                `;
+                tbody.appendChild(tr);
+            });
+            lucide.createIcons();
+        }
+
+        // Render Official Report View Table
+        function renderReportView() {
+            const tbody = document.getElementById('reportTableBody');
+            if (!tbody) return;
+            tbody.innerHTML = '';
+
+            equipmentData.forEach(item => {
+                const tr = document.createElement('tr');
+                tr.innerHTML = `
+                    <td class="p-2 font-mono font-bold border-r border-slate-200">${item.asset_id}</td>
+                    <td class="p-2 border-r border-slate-200">${item.tipo}</td>
+                    <td class="p-2 border-r border-slate-200">${item.marca || '---'}</td>
+                    <td class="p-2 border-r border-slate-200 font-mono">${item.serie || '---'}</td>
+                    <td class="p-2 border-r border-slate-200">${item.ubicacion}</td>
+                    <td class="p-2 font-medium">${item.estado}</td>
+                `;
+                tbody.appendChild(tr);
+            });
+        }
+
+        function updateReportDate() {
+            const reportDate = document.getElementById('reportDate');
+            if (reportDate) {
+                reportDate.innerText = new Date().toLocaleDateString('es-DO', { year: 'numeric', month: 'long', day: 'numeric' });
+            }
+        }
+
+        // Render Batch QR Labels
+        function renderQrLabels() {
+            const container = document.getElementById('labelsContainer');
+            if (!container) return;
+            container.innerHTML = '';
+
+            equipmentData.forEach(item => {
+                const card = document.createElement('div');
+                card.className = "border border-slate-300 p-3 rounded-lg text-center bg-white text-slate-900 flex flex-col items-center justify-between shadow-sm";
+                
+                const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=120x120&data=${encodeURIComponent(item.asset_id)}`;
+                
+                card.innerHTML = `
+                    <div class="text-[9px] font-bold uppercase tracking-wider text-slate-500 mb-1">CE PORFIRIO JEREZ VERAS</div>
+                    <img src="${qrUrl}" alt="QR ${item.asset_id}" class="w-24 h-24 my-1 border p-1 rounded bg-white">
+                    <div class="font-mono text-xs font-black text-slate-900">${item.asset_id}</div>
+                    <div class="text-[10px] font-medium text-slate-600 truncate max-w-[120px]">${item.tipo} - ${item.marca || ''}</div>
+                `;
+                container.appendChild(card);
+            });
+        }
+
+        // Modal Controls & Form Management
+        function openEquipmentModal(editItem = null) {
+            document.getElementById('equipmentForm').reset();
+            if (editItem) {
+                document.getElementById('modalTitle').innerText = 'Editar Equipo';
+                document.getElementById('eqInternalId').value = editItem.id || editItem.asset_id;
+                document.getElementById('eqId').value = editItem.asset_id;
+                document.getElementById('eqType').value = editItem.tipo;
+                document.getElementById('eqBrand').value = editItem.marca || '';
+                document.getElementById('eqSerial').value = editItem.serie || '';
+                document.getElementById('eqLocation').value = editItem.ubicacion;
+                document.getElementById('eqStatus').value = editItem.estado;
+                document.getElementById('eqNotes').value = editItem.notas || '';
+            } else {
+                document.getElementById('modalTitle').innerText = 'Registrar Nuevo Equipo';
+                document.getElementById('eqInternalId').value = '';
+                document.getElementById('eqId').value = `TIC-2026-00${equipmentData.length + 1}`;
+            }
+            document.getElementById('equipmentModal').classList.remove('hidden');
+        }
+
+        function closeEquipmentModal() {
+            document.getElementById('equipmentModal').classList.add('hidden');
+        }
+
+        async function saveEquipment(e) {
+            e.preventDefault();
+            const internalId = document.getElementById('eqInternalId').value;
+            const assetId = document.getElementById('eqId').value;
+            const tipo = document.getElementById('eqType').value;
+            const marca = document.getElementById('eqBrand').value;
+            const serie = document.getElementById('eqSerial').value;
+            const ubicacion = document.getElementById('eqLocation').value;
+            const estado = document.getElementById('eqStatus').value;
+            const notas = document.getElementById('eqNotes').value;
+
+            const equipmentObj = {
+                asset_id: assetId,
+                tipo,
+                marca,
+                serie,
+                ubicacion,
+                estado,
+                notas
+            };
+
+            if (supabaseClient) {
+                try {
+                    if (internalId) {
+                        await supabaseClient.from('equipos').update(equipmentObj).eq('asset_id', internalId);
+                    } else {
+                        await supabaseClient.from('equipos').insert([equipmentObj]);
+                    }
+                    await loadEquipmentData();
+                } catch (err) {
+                    console.error("Error guardando en Supabase:", err);
+                    saveEquipmentLocally(internalId, equipmentObj);
+                }
+            } else {
+                saveEquipmentLocally(internalId, equipmentObj);
+            }
+
+            closeEquipmentModal();
+        }
+
+        function saveEquipmentLocally(internalId, obj) {
+            if (internalId) {
+                const idx = equipmentData.findIndex(e => e.id === internalId || e.asset_id === internalId);
+                if (idx !== -1) equipmentData[idx] = { ...equipmentData[idx], ...obj };
+            } else {
+                equipmentData.unshift({ id: Date.now().toString(), ...obj });
+            }
+            saveLocalData();
+            renderAllViews();
+        }
+
+        function editEquipment(id) {
+            const item = equipmentData.find(e => e.id === id || e.asset_id === id);
+            if (item) openEquipmentModal(item);
+        }
+
+        async function deleteEquipment(id) {
+            if (!confirm('¿Estás seguro de eliminar este equipo del inventario?')) return;
+
+            if (supabaseClient) {
+                try {
+                    await supabaseClient.from('equipos').delete().eq('asset_id', id);
+                    await loadEquipmentData();
+                } catch (err) {
+                    console.error("Error eliminando en Supabase:", err);
+                    deleteEquipmentLocally(id);
+                }
+            } else {
+                deleteEquipmentLocally(id);
+            }
+        }
+
+        function deleteEquipmentLocally(id) {
+            equipmentData = equipmentData.filter(e => e.id !== id && e.asset_id !== id);
+            saveLocalData();
+            renderAllViews();
+        }
+
+        // Scanner Modal Logic
+        function openScannerModal() {
+            document.getElementById('scannerModal').classList.remove('hidden');
+            if (window.Html5Qrcode) {
+                html5QrScanner = new Html5Qrcode("qrReader");
+                html5QrScanner.start(
+                    { facingMode: "environment" },
+                    { fps: 10, qrbox: { width: 220, height: 220 } },
+                    (decodedText) => {
+                        handleQrResult(decodedText);
+                    },
+                    () => {}
+                ).catch(err => console.warn("No se pudo iniciar la cámara:", err));
+            }
+        }
+
+        function closeScannerModal() {
+            if (html5QrScanner) {
+                html5QrScanner.stop().then(() => html5QrScanner.clear()).catch(() => {});
+            }
+            document.getElementById('scannerModal').classList.add('hidden');
+        }
+
+        function handleManualQrSearch() {
+            const val = document.getElementById('manualQrInput').value.trim();
+            if (val) handleQrResult(val);
+        }
+
+        function handleQrResult(code) {
+            closeScannerModal();
+            const item = equipmentData.find(e => e.asset_id.toLowerCase() === code.toLowerCase());
+            if (item) {
+                switchTab('inventory');
+                editEquipment(item.id || item.asset_id);
+            } else {
+                if (confirm(`El código "${code}" no existe. ¿Deseas crearlo ahora?`)) {
+                    openEquipmentModal();
+                    document.getElementById('eqId').value = code;
+                }
+            }
+        }
+
+        // Supabase Config Modal
+        function openConfigModal() {
+            document.getElementById('supabaseUrlInput').value = localStorage.getItem('dtic_sp_url') || '';
+            document.getElementById('supabaseKeyInput').value = localStorage.getItem('dtic_sp_key') || '';
+            document.getElementById('configModal').classList.remove('hidden');
+        }
+
+        function closeConfigModal() {
+            document.getElementById('configModal').classList.add('hidden');
+        }
+
+        function saveSupabaseConfig() {
+            const url = document.getElementById('supabaseUrlInput').value.trim();
+            const key = document.getElementById('supabaseKeyInput').value.trim();
+            if (url && key) {
+                localStorage.setItem('dtic_sp_url', url);
+                localStorage.setItem('dtic_sp_key', key);
+            }
+            initSupabase();
+            loadEquipmentData();
+            closeConfigModal();
+        }
+
+        function clearSupabaseConfig() {
+            localStorage.removeItem('dtic_sp_url');
+            localStorage.removeItem('dtic_sp_key');
+            supabaseClient = null;
+            initSupabase();
+            loadEquipmentData();
+            closeConfigModal();
+        }
+
+        // Tab Navigation Switcher
+        function switchTab(tabId) {
+            document.querySelectorAll('.tab-content').forEach(el => el.classList.add('hidden'));
+            document.querySelectorAll('.tab-btn').forEach(btn => {
+                btn.classList.remove('bg-brand-600', 'text-white', 'shadow-md');
+                btn.classList.add('text-slate-400', 'hover:text-slate-200', 'hover:bg-slate-800');
+            });
+
+            if (tabId === 'inventory') {
+                document.getElementById('tabInventory').classList.remove('hidden');
+                document.getElementById('tabBtnInventory').classList.add('bg-brand-600', 'text-white', 'shadow-md');
+                document.getElementById('tabBtnInventory').classList.remove('text-slate-400');
+            } else if (tabId === 'guide') {
+                document.getElementById('tabGuide').classList.remove('hidden');
+                document.getElementById('tabBtnGuide').classList.add('bg-brand-600', 'text-white', 'shadow-md');
+                document.getElementById('tabBtnGuide').classList.remove('text-slate-400');
+            } else if (tabId === 'covers') {
+                document.getElementById('tabCovers').classList.remove('hidden');
+                document.getElementById('tabBtnCovers').classList.add('bg-brand-600', 'text-white', 'shadow-md');
+                document.getElementById('tabBtnCovers').classList.remove('text-slate-400');
+            } else if (tabId === 'github') {
+                document.getElementById('tabGithub').classList.remove('hidden');
+                document.getElementById('tabBtnGithub').classList.add('bg-brand-600', 'text-white', 'shadow-md');
+                document.getElementById('tabBtnGithub').classList.remove('text-slate-400');
+            } else if (tabId === 'report') {
+                document.getElementById('tabReport').classList.remove('hidden');
+                document.getElementById('tabBtnReport').classList.add('bg-brand-600', 'text-white', 'shadow-md');
+                document.getElementById('tabBtnReport').classList.remove('text-slate-400');
+            } else if (tabId === 'labels') {
+                document.getElementById('tabLabels').classList.remove('hidden');
+                document.getElementById('tabBtnLabels').classList.add('bg-brand-600', 'text-white', 'shadow-md');
+                document.getElementById('tabBtnLabels').classList.remove('text-slate-400');
+            }
+        }
+
+        // Cover Page Generator Engine
+        function setCoverModel(modelNum) {
+            currentCoverModel = modelNum;
+            for (let i = 1; i <= 4; i++) {
+                const btn = document.getElementById(`coverBtn${i}`);
+                if (btn) {
+                    if (i === modelNum) {
+                        btn.className = "p-3 rounded-lg border border-brand-500 bg-brand-600/20 text-white text-xs font-semibold flex flex-col items-center gap-1 transition shadow-lg shadow-brand-500/10";
+                    } else {
+                        btn.className = "p-3 rounded-lg border border-slate-700 bg-slate-950 text-slate-300 text-xs font-semibold flex flex-col items-center gap-1 transition hover:border-slate-500";
+                    }
+                }
+            }
+            renderCoverModel(modelNum);
+        }
+
+        function renderCoverModel(modelNum) {
+            const container = document.getElementById('coverPreviewContainer');
+            if (!container) return;
+
+            const nowYear = new Date().getFullYear();
+            const schoolYear = `${nowYear}-${nowYear + 1}`;
+
+            if (modelNum === 1) {
+                // Modelo 1: Formal Institucional MINERD
+                container.innerHTML = `
+                    <div class="text-center border-b-4 border-amber-600 pb-6 mb-8">
+                        <p class="text-xs font-extrabold uppercase tracking-widest text-slate-600">REPÚBLICA DOMINICANA</p>
+                        <p class="text-sm font-bold uppercase text-slate-700 mt-1">MINISTERIO DE EDUCACIÓN (MINERD)</p>
+                        <p class="text-xs font-medium text-slate-500 mt-0.5">REGIONAL 07 - DISTRITO EDUCATIVO 07-06, SAN FRANCISCO DE MACORÍS</p>
+                    </div>
+
+                    <div class="my-auto text-center py-12">
+                        <div class="inline-block p-4 bg-amber-50 rounded-full border border-amber-200 mb-6">
+                            <i data-lucide="award" class="w-12 h-12 text-amber-600"></i>
+                        </div>
+                        <h1 class="text-2xl sm:text-3xl font-black uppercase text-slate-900 tracking-tight leading-tight">INFORME Y PORTAFOLIO ANUAL DE GESTIÓN TIC</h1>
+                        <p class="text-sm font-semibold text-brand-700 mt-2">AÑO ESCOLAR ${schoolYear}</p>
+                        <p class="text-xs text-slate-500 mt-1 uppercase tracking-wider">Centro Educativo Porfirio Jerez Veras (Código: 1140)</p>
+                    </div>
+
+                    <div class="grid grid-cols-2 gap-8 border-t border-slate-300 pt-8 text-xs">
+                        <div class="bg-slate-50 p-4 rounded-lg border border-slate-200">
+                            <p class="font-bold text-slate-500 uppercase text-[10px] mb-1">Presentado por:</p>
+                            <p class="font-bold text-slate-900 text-sm">Jorge Luis de la Cruz Corcino</p>
+                            <p class="text-slate-600">Dinamizador/a TIC</p>
+                        </div>
+                        <div class="bg-slate-50 p-4 rounded-lg border border-slate-200">
+                            <p class="font-bold text-slate-500 uppercase text-[10px] mb-1">Dirigido a:</p>
+                            <p class="font-bold text-slate-900 text-sm">Juan Ramón Paulino Balbi</p>
+                            <p class="text-slate-600">Director del Centro Educativo</p>
+                        </div>
+                    </div>
+                `;
+            } else if (modelNum === 2) {
+                // Modelo 2: Moderno TIC Minimal
+                container.innerHTML = `
+                    <div class="flex justify-between items-center border-b border-slate-200 pb-4">
+                        <div>
+                            <span class="text-xs font-bold text-brand-600 tracking-widest uppercase">Ecosistema Digital TIC</span>
+                            <h3 class="text-sm font-bold text-slate-800">Centro Educativo Porfirio Jerez Veras</h3>
+                        </div>
+                        <span class="text-xs font-mono font-bold bg-slate-100 px-3 py-1 rounded text-slate-700 border border-slate-200">${schoolYear}</span>
+                    </div>
+
+                    <div class="my-auto py-16">
+                        <div class="w-16 h-1 bg-brand-600 mb-6"></div>
+                        <h1 class="text-3xl sm:text-4xl font-extrabold text-slate-900 tracking-tight mb-4">PORTAFOLIO DE INTEGRACIÓN TECNOLÓGICA & INVENTARIO DE ACTIVOS</h1>
+                        <p class="text-sm text-slate-600 max-w-xl">Compendio oficial de la gestión de infraestructura tecnológica, apoyo pedagógico a docentes y mantenimiento técnico de equipos.</p>
+                    </div>
+
+                    <div class="border-t-2 border-slate-900 pt-6 flex justify-between items-end text-xs">
+                        <div>
+                            <p class="font-bold text-slate-900 text-sm">Jorge Luis de la Cruz Corcino</p>
+                            <p class="text-slate-500">Dinamizador TIC • Cédula: 056-0097924-8</p>
+                        </div>
+                        <div class="text-right">
+                            <p class="font-bold text-slate-900">Distrito Educativo 07-06</p>
+                            <p class="text-slate-500">San Francisco de Macorís</p>
+                        </div>
+                    </div>
+                `;
+            } else if (modelNum === 3) {
+                // Modelo 3: Ejecutivo SISMAP
+                container.innerHTML = `
+                    <div class="bg-slate-900 text-white p-6 rounded-lg mb-8 flex justify-between items-center">
+                        <div>
+                            <p class="text-[10px] font-bold text-amber-400 uppercase tracking-widest">SISTEMA SISMAP EDUCACIÓN</p>
+                            <h2 class="text-lg font-bold">Acuerdo de Desempeño • Indicador 5.03</h2>
+                        </div>
+                        <div class="text-right text-xs">
+                            <p class="font-mono text-slate-300">Periodo ${schoolYear}</p>
+                        </div>
+                    </div>
+
+                    <div class="my-auto py-10 text-center">
+                        <h1 class="text-2xl font-black text-slate-900 uppercase tracking-wide mb-2">MEMORIA DE EVIDENCIAS Y REGISTRO DE INVENTARIO TIC</h1>
+                        <p class="text-xs font-semibold text-slate-500 uppercase">Cumplimiento de Compromisos de Desempeño Docente-Administrativo</p>
+                    </div>
+
+                    <div class="border-t border-slate-300 pt-6 grid grid-cols-2 gap-4 text-xs">
+                        <div>
+                            <p class="font-bold text-slate-700">Dinamizador/a TIC:</p>
+                            <p class="text-slate-900 font-semibold">Jorge Luis de la Cruz Corcino</p>
+                            <p class="text-slate-500 mt-1">Coordinadora Pedagógica: Yomary Altagracia Paulino</p>
+                        </div>
+                        <div>
+                            <p class="font-bold text-slate-700">Director del Centro:</p>
+                            <p class="text-slate-900 font-semibold">Juan Ramón Paulino Balbi</p>
+                            <p class="text-slate-500 mt-1">Código de Centro: 1140</p>
+                        </div>
+                    </div>
+                `;
+            } else if (modelNum === 4) {
+                // Modelo 4: Portafolio Pedagógico
+                container.innerHTML = `
+                    <div class="text-center mb-8 border-b border-slate-200 pb-4">
+                        <p class="text-xs font-bold text-blue-700 uppercase">Ministerio de Educación (MINERD)</p>
+                        <h2 class="text-base font-bold text-slate-800">Centro Educativo Porfirio Jerez Veras</h2>
+                    </div>
+
+                    <div class="my-auto py-12 text-center bg-blue-50/50 p-8 rounded-2xl border border-blue-100">
+                        <div class="w-16 h-16 mx-auto mb-4 bg-blue-600 text-white rounded-2xl flex items-center justify-center shadow-lg shadow-blue-500/20">
+                            <i data-lucide="book-open" class="w-8 h-8"></i>
+                        </div>
+                        <h1 class="text-2xl sm:text-3xl font-extrabold text-slate-900 mb-2">PORTAFOLIO PEDAGÓGICO TIC</h1>
+                        <p class="text-xs font-medium text-slate-600 max-w-md mx-auto">Acompañamiento docente, talleres de formación continua y control de recursos tecnológicos escolares.</p>
+                    </div>
+
+                    <div class="border-t border-slate-200 pt-6 flex justify-between items-center text-xs">
+                        <div>
+                            <p class="font-bold text-slate-900">Jorge Luis de la Cruz Corcino</p>
+                            <p class="text-slate-500">Dinamizador TIC</p>
+                        </div>
+                        <div class="text-right">
+                            <p class="font-bold text-slate-900">Año Escolar ${schoolYear}</p>
+                            <p class="text-slate-500">Nivel: Todos los Niveles</p>
+                        </div>
+                    </div>
+                `;
+            }
+            lucide.createIcons();
+        }
+
+        // Download Application HTML file
+        function downloadAppFile() {
+            const blob = new Blob([document.documentElement.outerHTML], { type: 'text/html' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = 'index.html';
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+        }
+    </script>
+</body>
+</html>
